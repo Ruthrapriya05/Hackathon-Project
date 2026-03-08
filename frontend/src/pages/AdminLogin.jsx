@@ -101,15 +101,6 @@ const AdminLogin = () => {
             )}
           </button>
         </form>
-
-        <p style={{
-          textAlign: 'center',
-          marginTop: '1.5rem',
-          fontSize: '0.8rem',
-          color: 'var(--text-muted)',
-        }}>
-          Demo credentials: admin / admin123
-        </p>
       </div>
     </div>
   );
