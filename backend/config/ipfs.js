@@ -18,6 +18,8 @@ const getPinata = () => {
   return pinata;
 };
 
+const axios = require('axios');
+
 /**
  * Upload certificate data to IPFS via Pinata
  * @param {Object} certificateData Certificate metadata
@@ -25,13 +27,32 @@ const getPinata = () => {
  */
 const uploadToIPFS = async (certificateData) => {
   try {
-    const pinataInstance = getPinata();
-    const result = await pinataInstance.upload.json(certificateData);
-    console.log("📌 Uploaded to IPFS:", result.IpfsCid);
-    return result.IpfsCid;
+    if (!process.env.PINATA_JWT) {
+      throw new Error("PINATA_JWT not set in environment");
+    }
+
+    const payload = JSON.stringify({
+      pinataOptions: { cidVersion: 1 },
+      pinataMetadata: { name: certificateData.certificateId || "Certificate.json" },
+      pinataContent: certificateData
+    });
+
+    const config = {
+      method: 'post',
+      url: 'https://api.pinata.cloud/pinning/pinJSONToIPFS',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${process.env.PINATA_JWT}`
+      },
+      data: payload
+    };
+
+    const res = await axios(config);
+    console.log("📌 Uploaded to IPFS:", res.data.IpfsHash);
+    return res.data.IpfsHash;
   } catch (error) {
-    console.error("IPFS upload error:", error.message);
-    throw new Error(`Failed to upload to IPFS: ${error.message}`);
+    console.error("IPFS upload error:", error.response?.data?.error || error.message);
+    throw new Error(`Failed to upload to IPFS: ${error.response?.data?.error?.details || error.message}`);
   }
 };
 
@@ -42,11 +63,12 @@ const uploadToIPFS = async (certificateData) => {
  */
 const fetchFromIPFS = async (cid) => {
   try {
-    const pinataInstance = getPinata();
     const gateway = process.env.PINATA_GATEWAY || "gateway.pinata.cloud";
-    const response = await fetch(`https://${gateway}/ipfs/${cid}`);
-    if (!response.ok) throw new Error("Failed to fetch from IPFS");
-    return await response.json();
+    // Check if gateway already includes protocol
+    const url = gateway.startsWith('http') ? `${gateway}/ipfs/${cid}` : `https://${gateway}/ipfs/${cid}`;
+    
+    const response = await axios.get(url, { headers: { Accept: 'application/json' } });
+    return response.data;
   } catch (error) {
     console.error("IPFS fetch error:", error.message);
     throw new Error(`Failed to fetch from IPFS: ${error.message}`);

@@ -28,7 +28,7 @@ const generateHash = (data) => {
  */
 router.post("/issue", authMiddleware, adminOnly, async (req, res) => {
   try {
-    const {
+    let {
       studentName,
       studentEmail,
       studentAddress,
@@ -46,6 +46,9 @@ router.post("/issue", authMiddleware, adminOnly, async (req, res) => {
         message: "Missing required fields: studentName, studentAddress, courseName, university",
       });
     }
+
+    // Normalize address to prevent ethers.js checksum mismatch errors
+    studentAddress = studentAddress.toLowerCase();
 
     // Generate unique certificate ID
     const certificateId = `CERT-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
@@ -176,7 +179,7 @@ router.post("/bulk-issue", authMiddleware, adminOnly, upload.single("csvFile"), 
 
       certificateIds.push(certId);
       certificateHashes.push(hash);
-      studentAddresses.push(record.studentAddress || record.student_address || record.wallet_address);
+      studentAddresses.push((record.studentAddress || record.student_address || record.wallet_address || "").toLowerCase());
       certificatesData.push(certData);
     }
 

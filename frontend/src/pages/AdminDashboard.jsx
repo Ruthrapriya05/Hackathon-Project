@@ -124,10 +124,13 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!revokeId || !revokeReason) return;
 
+    // Sanitize accidental copy-paste prefixes
+    const cleanId = revokeId.replace(/^Certificate ID:\s*/i, '').trim();
+
     setRevokeLoading(true);
     setRevokeResult(null);
     try {
-      const res = await revokeCertificate(revokeId, revokeReason);
+      const res = await revokeCertificate(cleanId, revokeReason);
       setRevokeResult({ success: true, data: res.data.data });
       setRevokeId('');
       setRevokeReason('');

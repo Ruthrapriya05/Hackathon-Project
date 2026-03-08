@@ -20,7 +20,8 @@ const VerifyPage = () => {
     setResult(null);
 
     try {
-      const res = await verifyCertificate(certificateId.trim());
+      const cleanId = certificateId.replace(/^Certificate ID:\s*/i, '').trim();
+      const res = await verifyCertificate(cleanId);
       setResult(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed. Please try again.');
